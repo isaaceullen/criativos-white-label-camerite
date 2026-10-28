@@ -93,7 +93,7 @@ Os pesos que aparecem no editor vêm de `BRAND_FONTS` em [`src/lib/fonts.ts`](sr
 O carregamento é dinâmico, feito em [`src/lib/fonts.ts`](src/lib/fonts.ts) pela função `loadGoogleFont`:
 
 - O CSS é buscado em `fonts.googleapis.com` só quando o cliente escolhe a fonte, e é injetado como `<style>` inline para que o `html-to-image` consiga embutir a fonte no PNG.
-- Os pesos de 100 a 900 são testados um a um; só os que a família realmente tem aparecem como opção no editor.
+- Os pesos de 100 a 900 são testados um a um pela rota [`/api/google-font`](src/app/api/google-font/route.ts), no servidor. Só os que a família realmente tem aparecem como opção no editor. O teste não pode ser feito direto no navegador porque o Google responde sem cabeçalho CORS para pesos inexistentes, o que gera "Failed to fetch". O resultado fica em cache por alguns dias.
 - Apenas os subsets `latin` e `latin-ext` são mantidos (cobrem português).
 - Para mudar a lista de sugestões, edite `GOOGLE_FONT_SUGGESTIONS`. Qualquer outra família pode ser digitada no campo.
 

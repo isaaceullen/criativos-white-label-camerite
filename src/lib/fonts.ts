@@ -20,7 +20,7 @@ export const WEIGHT_NAMES: Record<number, string> = {
   900: "Black",
 };
 
-const ALL_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+export type GoogleFontResponse = { family: string; weights: number[]; css: string } | { error: string };
 
 // Os pesos precisam bater com os arquivos declarados em `src/fonts/index.ts`.
 export const BRAND_FONTS: { id: BrandFontId; label: string; cssVar: string; weights: number[] }[] = [
@@ -94,25 +94,13 @@ export function nearestWeight(weights: number[], target: number): number {
   return weights.reduce((best, w) => (Math.abs(w - target) < Math.abs(best - target) ? w : best), weights[0]);
 }
 
-const KEPT_SUBSETS = new Set(["latin", "latin-ext"]);
 const loadedFamilies = new Map<string, Promise<number[]>>();
-
-function googleCssBase(family: string): string {
-  const name = encodeURIComponent(family.trim()).replace(/%20/g, "+");
-  return `https://fonts.googleapis.com/css2?family=${name}`;
-}
-
-function keepLatinSubsets(css: string): string {
-  const blocks = [...css.matchAll(/\/\*\s*([\w-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g)];
-  if (blocks.length === 0) return css;
-  const kept = blocks.filter((b) => KEPT_SUBSETS.has(b[1])).map((b) => b[2]);
-  return kept.length > 0 ? kept.join("\n") : css;
-}
 
 /**
  * Carrega uma família do Google Fonts sob demanda e resolve com os pesos disponíveis.
- * O CSS é injetado como <style> inline (e não <link>) para que o html-to-image
- * consiga ler as regras @font-face e embutir a fonte no PNG exportado.
+ * Os pesos e o CSS vêm de `/api/google-font`. O CSS é injetado como <style> inline
+ * (e não <link>) para que o html-to-image consiga ler as regras @font-face e embutir
+ * a fonte no PNG exportado.
  */
 export function loadGoogleFont(family: string): Promise<number[]> {
   const key = family.trim().toLowerCase();
@@ -120,24 +108,21 @@ export function loadGoogleFont(family: string): Promise<number[]> {
   if (cached) return cached;
 
   const promise = (async () => {
-    const base = googleCssBase(family);
-    // A API responde 400 para pesos que a família não tem, então testamos cada um.
-    const probes = await Promise.all(
-      ALL_WEIGHTS.map(async (w) => ((await fetch(`${base}:wght@${w}&display=swap`)).ok ? w : null)),
-    );
-    let weights = probes.filter((w): w is number => w !== null);
-    let url = `${base}:wght@${weights.join(";")}&display=swap`;
-    if (weights.length === 0) {
-      weights = [400];
-      url = `${base}&display=swap`;
+    let res: Response;
+    try {
+      res = await fetch(`/api/google-font?family=${encodeURIComponent(family.trim())}`);
+    } catch {
+      throw new Error("Sem conexão. Verifique a internet e tente novamente.");
     }
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`A fonte "${family}" não foi encontrada no Google Fonts.`);
+    const data = (await res.json().catch(() => null)) as GoogleFontResponse | null;
+    if (!res.ok || !data || "error" in data) {
+      throw new Error(data && "error" in data ? data.error : "Não foi possível carregar a fonte.");
+    }
+    const { weights, css } = data;
 
     const style = document.createElement("style");
     style.dataset.googleFont = family;
-    style.textContent = keepLatinSubsets(await res.text());
+    style.textContent = css;
     document.head.appendChild(style);
 
     await Promise.all(weights.map((w) => document.fonts.load(`${w} 32px "${family}"`, "Áa")));
