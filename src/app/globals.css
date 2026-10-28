@@ -1,26 +1,60 @@
 @import "tailwindcss";
 
+/*
+ * Tokens do post. Os valores abaixo são o padrão Camerite; o editor sobrescreve
+ * essas variables inline na raiz de cada post (ver `paletteToCssVars`).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primaria-1: #7b48ea;
+  --primaria-2: #a785f1;
+  --primaria-3: #d3c2f8;
+  --secundaria-2: #3e2475;
+  --secundaria-3: #29184e;
+  --branco: #ffffff;
+  --preto: #000000;
+
+  --post-font-title: var(--font-specify), sans-serif;
+  --post-font-body: var(--font-univers), sans-serif;
+  --post-weight-title: 900;
+  --post-weight-body: 400;
+}
+
+@utility font-title {
+  font-family: var(--post-font-title);
+  font-weight: var(--post-weight-title);
+}
+
+@utility font-body {
+  font-family: var(--post-font-body);
+  font-weight: var(--post-weight-body);
+}
+
+/* Elementos arrastáveis do post (só existem no preview interativo). */
+.movable > * {
+  pointer-events: auto;
+  cursor: move;
+}
+
+.movable:hover > *,
+.movable[data-selected] > * {
+  outline: var(--ui-outline, 2px) dashed #7b48ea;
+  outline-offset: calc(var(--ui-outline, 2px) * 3);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-primaria-1: var(--primaria-1);
+  --color-primaria-2: var(--primaria-2);
+  --color-primaria-3: var(--primaria-3);
+  --color-secundaria-2: var(--secundaria-2);
+  --color-secundaria-3: var(--secundaria-3);
+  --color-branco: var(--branco);
+  --color-preto: var(--preto);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-ui: var(--font-inter), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f5f4f8;
+  color: #1c1530;
 }
